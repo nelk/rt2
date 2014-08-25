@@ -62,14 +62,6 @@ public:
     return modelMatrix;
   }
 
-  glm::vec3* getFirstFourVertices() {
-    return firstFourVertices;
-  }
-
-  glm::vec3& getFirstNormal() {
-    return firstNormal;
-  }
-
   void setUVs(std::vector<glm::vec2>& uvs);
 
 private:
@@ -81,9 +73,6 @@ private:
   int numIndices;
   Material* material;
   glm::mat4 modelMatrix;
-
-  glm::vec3 firstFourVertices[4];
-  glm::vec3 firstNormal;
 };
 
 std::vector<Mesh*> loadScene(std::string fileName, bool invertNormals = false);

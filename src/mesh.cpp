@@ -4,7 +4,6 @@
 #include <iostream>
 #include <list>
 
-#include "mirror.hpp"
 #include "texture.hpp"
 
 uint32_t Mesh::meshIdCounter = 1;
@@ -112,11 +111,6 @@ Mesh::Mesh(
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffers[ELEMENT_BUF]);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0], GL_STATIC_DRAW);
 
-  // For mirrors.
-  for (unsigned int i = 0; i < 4 && i < vertices.size(); i++) {
-    firstFourVertices[i] = vertices[i];
-  }
-  firstNormal = normals[0];
 }
 
 Mesh::~Mesh() {
@@ -298,22 +292,13 @@ std::vector<Mesh*> loadScene(std::string fileName, bool invertNormals) {
     std::string materialNameString(materialName.C_Str());
     //std::cerr << "Loading material " << materialNameString << std::endl;
 
-    if (materialNameString.substr(0, 6) == "Mirror") {
-      std::cerr << "Creating mirror" << std::endl;
-      materials[matId] = new Mirror(
-        glm::vec3(ka.r, ka.g, ka.b),
-        glm::vec3(kd.r, kd.g, kd.b),
-        glm::vec3(ks.r, ks.g, ks.b),
-        glm::vec3(ke.r, ke.g, ke.b),
-        shininess);
-    } else {
-      materials[matId] = new Material(
-        glm::vec3(ka.r, ka.g, ka.b),
-        glm::vec3(kd.r, kd.g, kd.b),
-        glm::vec3(ks.r, ks.g, ks.b),
-        glm::vec3(ke.r, ke.g, ke.b),
-        shininess);
-    }
+    materials[matId] = new Material(
+      glm::vec3(ka.r, ka.g, ka.b),
+      glm::vec3(kd.r, kd.g, kd.b),
+      glm::vec3(ks.r, ks.g, ks.b),
+      glm::vec3(ke.r, ke.g, ke.b),
+      shininess
+    );
 
     loadTexture(aiTextureType_DIFFUSE, m, materials[matId]);
     loadTexture(aiTextureType_HEIGHT, m, materials[matId]); // Normal Map.
