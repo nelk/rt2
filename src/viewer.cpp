@@ -23,6 +23,9 @@
 #define TARGET_FRAME_DELTA 0.01666667
 #define FPS_SAMPLE_RATE 20
 
+// TODO.
+#define NUM_SPHERES 3
+
 void window_size_callback(GLFWwindow* window, int width, int height) {
   Viewer* viewer = (Viewer*)glfwGetWindowUserPointer(window);
   viewer->updateSize(width, height);
@@ -129,6 +132,18 @@ bool Viewer::initialize() {
   // Initialize textures.
   Texture::initialize();
 
+  skybox = TextureCube::loadOrGet(
+    (std::string[])
+    { "textures/NiagaraFalls2/posx.jpg"
+    , "textures/NiagaraFalls2/negx.jpg"
+    , "textures/NiagaraFalls2/negy.jpg" // Flip y.
+    , "textures/NiagaraFalls2/posy.jpg"
+    , "textures/NiagaraFalls2/posz.jpg"
+    , "textures/NiagaraFalls2/negz.jpg"
+    }
+  );
+  checkGLErrors("dksljfd");
+
   glGenVertexArrays(1, &vertexArrayId);
   glBindVertexArray(vertexArrayId);
 
@@ -148,7 +163,7 @@ bool Viewer::initialize() {
 
 
   // Compile GLSL programs.
-  raytraceProgramId = loadShaders( "shaders/raytrace.vert", "shaders/raytrace.frag" );
+  raytraceProgramId = loadShaders("shaders/raytrace.vert", "shaders/raytrace.frag");
 
   if (raytraceProgramId == 0) {
     return false;
@@ -165,7 +180,7 @@ bool Viewer::initialize() {
   glGenBuffers(1, &materialUBO);
   glGenBuffers(1, &lightUBO);
 
-  GLfloat spheres[] = {
+  GLfloat spheres[8*NUM_SPHERES] = {
     0, 0, 3,
     1,
     glm::intBitsToFloat(0),
@@ -179,12 +194,14 @@ bool Viewer::initialize() {
     -3, 5, 10,
     3,
     glm::intBitsToFloat(2),
-    0, 0, 0,
+    0, 0, 0
 
+    /*
     0, -10000 - 8, 0,
     10000,
     glm::intBitsToFloat(0),
     0, 0, 0
+    */
   };
   sphereBlockId = glGetUniformBlockIndex(raytraceProgramId, "SphereBlock");
   glUniformBlockBinding(raytraceProgramId, sphereBlockId, 0);
@@ -203,7 +220,7 @@ bool Viewer::initialize() {
     30, // Shine.
 
     0, 0, 0,
-    0,
+    0.1,
     0.1, 0.1, 0.1,
     1,
     0.0, 0.6, 0.0,
@@ -212,9 +229,9 @@ bool Viewer::initialize() {
     80,
 
     0, 0, 0,
-    0.8,
+    0.5,
     0, 0, 0,
-    1.1, // IOR.
+    1.4, // IOR.
     0.0, 0.0, 0.8,
     0.3,
     0.3, 0.3, 0.3,
@@ -282,6 +299,8 @@ void Viewer::renderScene(GLuint renderTargetFBO, const glm::vec3& cameraPosition
   static GLuint rtNumSpheresId = glGetUniformLocation(raytraceProgramId, "numSpheres");
   static GLuint rtNumLightsId = glGetUniformLocation(raytraceProgramId, "numLights");
 
+  static GLuint rtSkyboxId = glGetUniformLocation(raytraceProgramId, "skyboxTexture");
+
   glUseProgram(raytraceProgramId);
   glViewport(0, 0, width, height);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -289,6 +308,11 @@ void Viewer::renderScene(GLuint renderTargetFBO, const glm::vec3& cameraPosition
   bindRenderTarget(renderTargetFBO);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
   glDisable(GL_DEPTH_TEST);
+  glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+  glActiveTexture(GL_TEXTURE0 + 0);
+  glBindTexture(GL_TEXTURE_CUBE_MAP, skybox->getTextureId());
+  glUniform1i(rtSkyboxId, 0);
 
   glUniform3fv(rtCameraPositionId, 1, &cameraPosition[0]);
   glUniform3fv(rtCameraDirectionId, 1, &cameraDirection[0]);
@@ -301,7 +325,7 @@ void Viewer::renderScene(GLuint renderTargetFBO, const glm::vec3& cameraPosition
   glBindBufferBase(GL_UNIFORM_BUFFER, 2, lightUBO);
 
   glUniform1i(rtNumLightsId, 2);
-  glUniform1i(rtNumSpheresId, 4);
+  glUniform1i(rtNumSpheresId, NUM_SPHERES);
 
   drawQuad();
 }
@@ -352,6 +376,8 @@ Viewer::~Viewer() {
 
   delete settings;
   settings = NULL;
+
+  Texture::freeLoadedTextures();
 
   glDeleteProgram(raytraceProgramId);
   glDeleteVertexArrays(1, &vertexArrayId);

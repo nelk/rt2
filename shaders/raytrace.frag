@@ -41,6 +41,9 @@ struct Material {
 
 layout(location = 0) out vec3 colour;
 
+
+uniform samplerCube skyboxTexture;
+
 layout (std140) uniform SphereBlock {
   Sphere spheres[MAX_SPHERES];
 };
@@ -140,7 +143,9 @@ Intersection intersectScene(Ray r) {
 }
 
 vec3 genBackground(Ray r) {
-  return vec3(0.0, 0.0, sin(r.d.y*20.0)/4.0 + 0.75);
+  return texture(skyboxTexture, r.d*vec3(1, -1, 1)).rgb;
+  //return vec3(0.0, 0.0, sin(r.d.y*20.0)/4.0 + 0.75);
+  //return r.d;
 }
 
 vec3 raytrace(Ray initialRay) {
@@ -151,7 +156,7 @@ vec3 raytrace(Ray initialRay) {
   float ior = 1;
 
   // Loop over mirror reflection depth or refraction depth.
-  const int MAX_DEPTH = 8;
+  const int MAX_DEPTH = 10;
   for (int depth = 0; depth < MAX_DEPTH && colourAdditionMultiplier > 0.01; depth++) {
     Intersection it = intersectScene(r);
     if (!it.hit) {
@@ -163,7 +168,7 @@ vec3 raytrace(Ray initialRay) {
       isRefractionRay = false;
       r = Ray(
         it.p,
-        refract(r.d, -it.n, 1.0/ior)
+        refract(r.d, -it.n, ior)
       );
       continue;
     }
@@ -191,7 +196,7 @@ vec3 raytrace(Ray initialRay) {
     colourAdditionMultiplier *= refractOrMirror;
     r = Ray(
       it.p,
-      isRefractionRay ? refract(r.d, it.n, ior) : reflect(r.d, it.n)
+      isRefractionRay ? refract(r.d, it.n, 1.0/ior) : reflect(r.d, it.n)
     );
   }
 

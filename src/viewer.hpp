@@ -6,6 +6,7 @@
 
 #include <vector>
 #include "controller.hpp"
+#include "texture.hpp"
 
 #define DEFAULT_WIDTH 1024
 #define DEFAULT_HEIGHT 768
@@ -51,6 +52,8 @@ private:
 
   Settings* settings;
   Controller* controller;
+
+  TextureCube* skybox;
 
   GLuint raytraceProgramId;
   GLuint depthRenderBuffer;
