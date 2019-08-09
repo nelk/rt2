@@ -132,16 +132,15 @@ bool Viewer::initialize() {
   // Initialize textures.
   Texture::initialize();
 
-  skybox = TextureCube::loadOrGet(
-    (std::string[])
+  std::string texture_paths[] =
     { "textures/NiagaraFalls2/posx.jpg"
     , "textures/NiagaraFalls2/negx.jpg"
     , "textures/NiagaraFalls2/negy.jpg" // Flip y.
     , "textures/NiagaraFalls2/posy.jpg"
     , "textures/NiagaraFalls2/posz.jpg"
     , "textures/NiagaraFalls2/negz.jpg"
-    }
-  );
+    };
+  skybox = TextureCube::loadOrGet(texture_paths);
   checkGLErrors("dksljfd");
 
   glGenVertexArrays(1, &vertexArrayId);
